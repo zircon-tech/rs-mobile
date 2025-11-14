@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,19 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, commonStyles, buttonStyles } from '@/styles/commonStyles';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/IconSymbol';
+
+// Email validation regex - moved outside component to avoid re-creation
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Password validation regex - at least 8 chars, uppercase, lowercase, number, special char
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -25,18 +32,85 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Validation states
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  // Validate email
+  const validateEmail = (value: string) => {
+    if (!value) {
+      setEmailError('Email is required');
+      return false;
+    }
+    if (!EMAIL_REGEX.test(value)) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
+  // Validate password
+  const validatePassword = (value: string) => {
+    if (!value) {
+      setPasswordError('Password is required');
+      return false;
+    }
+    if (value.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+      return false;
+    }
+    if (!PASSWORD_REGEX.test(value)) {
+      setPasswordError('Password must contain uppercase, lowercase, number, and special character');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  // Check form validity whenever email or password changes
+  useEffect(() => {
+    const isEmailValid = email && EMAIL_REGEX.test(email);
+    const isPasswordValid = password && PASSWORD_REGEX.test(password);
+    setIsFormValid(isEmailValid && isPasswordValid);
+  }, [email, password]);
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    if (value) {
+      validateEmail(value);
+    } else {
+      setEmailError('');
+    }
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (value) {
+      validatePassword(value);
+    } else {
+      setPasswordError('');
+    }
+  };
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    // Validate all fields
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
     setIsLoading(true);
     try {
       await login(email, password);
+      // Navigate to Marketplace on successful sign-in
       router.replace('/(tabs)/marketplace');
     } catch (error) {
+      console.log('Login error:', error);
       Alert.alert('Error', 'Invalid email or password');
     } finally {
       setIsLoading(false);
@@ -44,7 +118,20 @@ export default function LoginScreen() {
   };
 
   const handleGoogleSignIn = () => {
-    Alert.alert('Google Sign-In', 'Google Sign-In will be implemented with OAuth');
+    // Simulate Google Sign-In and navigate to Marketplace
+    Alert.alert(
+      'Google Sign-In',
+      'Google Sign-In will be implemented with OAuth',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Simulate successful Google sign-in
+            router.replace('/(tabs)/marketplace');
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -58,9 +145,11 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <View style={styles.logo}>
-              <Text style={styles.logoText}>RedSwan</Text>
-            </View>
+            <Image
+              source={{ uri: 'https://investor.mxizirconmerge.redswandev.com/_next/static/media/logo.be69270c.png' }}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue</Text>
           </View>
@@ -69,26 +158,38 @@ export default function LoginScreen() {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
               <TextInput
-                style={commonStyles.input}
+                style={[
+                  commonStyles.input,
+                  emailError ? styles.inputError : null,
+                ]}
                 placeholder="Enter your email"
                 placeholderTextColor={colors.textSecondary}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={handleEmailChange}
+                onBlur={() => email && validateEmail(email)}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              {emailError ? (
+                <Text style={styles.errorText}>{emailError}</Text>
+              ) : null}
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Password</Text>
               <View style={styles.passwordContainer}>
                 <TextInput
-                  style={[commonStyles.input, styles.passwordInput]}
+                  style={[
+                    commonStyles.input,
+                    styles.passwordInput,
+                    passwordError ? styles.inputError : null,
+                  ]}
                   placeholder="Enter your password"
                   placeholderTextColor={colors.textSecondary}
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={handlePasswordChange}
+                  onBlur={() => password && validatePassword(password)}
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
@@ -104,6 +205,9 @@ export default function LoginScreen() {
                   />
                 </TouchableOpacity>
               </View>
+              {passwordError ? (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              ) : null}
             </View>
 
             <TouchableOpacity
@@ -114,9 +218,12 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[buttonStyles.primary, isLoading && styles.disabledButton]}
+              style={[
+                buttonStyles.primary,
+                (!isFormValid || isLoading) && styles.disabledButton,
+              ]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={!isFormValid || isLoading}
             >
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" />
@@ -132,18 +239,18 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={buttonStyles.outline}
+              style={styles.googleButton}
               onPress={handleGoogleSignIn}
             >
-              <View style={styles.googleButton}>
+              <View style={styles.googleButtonContent}>
                 <IconSymbol
                   ios_icon_name="globe"
                   android_material_icon_name="language"
                   size={24}
                   color={colors.primary}
                 />
-                <Text style={[buttonStyles.outlineText, { marginLeft: 8 }]}>
-                  Continue with Google
+                <Text style={styles.googleButtonText}>
+                  Sign in with Google
                 </Text>
               </View>
             </TouchableOpacity>
@@ -177,18 +284,9 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    width: 80,
+    width: 160,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 24,
-  },
-  logoText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   title: {
     fontSize: 28,
@@ -212,6 +310,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
+  inputError: {
+    borderColor: '#FF3B30',
+    borderWidth: 1,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF3B30',
+    marginTop: 4,
+    marginLeft: 4,
+  },
   passwordContainer: {
     position: 'relative',
   },
@@ -233,7 +341,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   disabledButton: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -251,9 +359,25 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   googleButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
+    marginLeft: 8,
   },
   footer: {
     flexDirection: 'row',

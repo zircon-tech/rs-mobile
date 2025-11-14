@@ -21,9 +21,11 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>RedSwan</Text>
-          </View>
+          <Image
+            source={{ uri: 'https://investor.mxizirconmerge.redswandev.com/_next/static/media/logo.be69270c.png' }}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
         <Text style={styles.tagline}>Tokenized Real Estate Investment</Text>
       </View>
@@ -46,17 +48,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   logo: {
-    width: 120,
+    width: 200,
     height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   tagline: {
     fontSize: 18,
