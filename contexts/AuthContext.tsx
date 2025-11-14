@@ -49,27 +49,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (email: string, password: string) => {
-    try {
-      // TODO: Replace with actual API call
-      // For now, simulate login
-      const mockUser: User = {
-        id: '1',
-        email,
-        firstName: 'John',
-        lastName: 'Doe',
-        kycStatus: KYCStatus.NOT_STARTED,
-        accreditationStatus: AccreditationStatus.NOT_STARTED,
-        country: 'US',
-        createdAt: new Date().toISOString(),
-      };
+    // Simular login con usuario mockeado - siempre exitoso
+    const mockUser: User = {
+      id: '1',
+      email,
+      firstName: 'John',
+      lastName: 'Doe',
+      kycStatus: KYCStatus.NOT_STARTED,
+      accreditationStatus: AccreditationStatus.NOT_STARTED,
+      country: 'US',
+      createdAt: new Date().toISOString(),
+    };
 
-      await SecureStore.setItemAsync('user', JSON.stringify(mockUser));
-      await SecureStore.setItemAsync('token', 'mock-token');
-      setUser(mockUser);
-    } catch (error) {
-      console.log('Login error:', error);
-      throw error;
-    }
+    await SecureStore.setItemAsync('user', JSON.stringify(mockUser));
+    await SecureStore.setItemAsync('token', 'mock-token');
+    setUser(mockUser);
   };
 
   const register = async (
